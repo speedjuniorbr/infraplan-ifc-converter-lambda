@@ -1,0 +1,31 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      # O AWS CLI já está configurado no ambiente do CodeBuild, então podemos usar `aws ecr get-login-password`.
+      # CODEBUILD_RESOLVED_SOURCE_VERSION é uma variável de ambiente do CodeBuild que contém o hash do commit (ou ID da versão).
+      - AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query 'Account' --output text)
+      - AWS_DEFAULT_REGION=$(aws configure get region) # Ou defina a região explicitamente, ex: us-east-1
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+      - REPOSITORY_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME
+      - IMAGE_TAG=${CODEBUILD_RESOLVED_SOURCE_VERSION//:/_} # Substitui ':' por '_' para um tag válido
+  build:
+    commands:
+      - echo Build started on `date`
+      - echo Building the Docker image...
+      # Construa a imagem usando o Dockerfile do diretório atual.
+      - docker build -t $IMAGE_REPO_NAME:$IMAGE_TAG .
+      - docker tag $IMAGE_REPO_NAME:$IMAGE_TAG $REPOSITORY_URI:$IMAGE_TAG
+  post_build:
+    commands:
+      - echo Build completed on `date`
+      - echo Pushing the Docker image...
+      - docker push $REPOSITORY_URI:$IMAGE_TAG
+      - echo Writing image definitions file...
+      # Este arquivo é útil para implantação automática com CodeDeploy, mas opcional se você implantar manualmente.
+      - printf '[{"name":"ifc-converter-lambda","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
+artifacts:
+  files:
+    - imagedefinitions.json
