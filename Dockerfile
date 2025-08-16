@@ -2,7 +2,7 @@
 
 # --- ESTÁGIO 1: ifc_converter_builder (COMPILAÇÃO DO IFCConvert, OCCT e CGAL) ---
 # Usamos amazonlinux:2023 como base, pois é a mesma base da imagem lambda/python:3.11
-FROM amazonlinux:2023 AS ifc_converter_builder
+FROM public.ecr.aws/amazonlinux/amazonlinux:2023 AS ifc_converter_builder 
 
 # Define um argumento para o número de CPUs para otimizar a compilação
 ARG NUM_CPUS=$(nproc)
