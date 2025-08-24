@@ -1,0 +1,3 @@
+[wsl2]
+memory=12GB   # Aloca 12GB de RAM para o WSL2
+processors=6  # Aloca 6 núcleos de processador para o WSL2
